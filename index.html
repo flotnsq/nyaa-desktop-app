@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <!-- Relaxed CSP to allow external images -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:;">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:;">
+    <title>Nyaa.si Desktop</title>
+    <style>
+        /* Dark Mode Color Palette (Default) */
+        :root {
+            --bg-primary: #1a1a1a; /* Dark background */
+            --bg-secondary: #2a2a2a; /* Slightly lighter background for elements */
+            --text-primary: #e0e0e0; /* Light gray text */
+            --text-secondary: #b0b0b0; /* Dimmer text */
+            --border-color: #444444; /* Darker borders */
+            --accent-primary: #00b4d8; /* A bright accent */
+            --accent-secondary: #0077b6; /* A darker accent */
+            --accent-hover: #023e8a; /* Accent hover */
+            --table-header-bg: #03045e; /* Dark blue for table header */
+            --table-header-text: #ade8f4; /* Light blue text for table header */
+            --table-row-even-bg: #2f2f2f; /* Slightly different dark for even rows */
+            --table-row-hover-bg: #3f3f3f; /* Dark hover for rows */
+            --error-bg: #5d0000; /* Dark red background for errors */
+            --error-border: #a00000;
+            --error-text: #ffdddd;
+            --success-color: #66bb6a; /* Greenish for success */
+            --fail-color: #ef5350; /* Reddish for failure */
+            --button-bg: var(--accent-secondary);
+            --button-text: white;
+            --button-hover-bg: var(--accent-hover);
+            --input-bg: var(--bg-primary);
+            --input-text: var(--text-primary);
+            --history-item-bg: var(--bg-secondary);
+            --history-item-text: var(--text-secondary);
+            --history-item-hover-bg: var(--accent-hover);
+            --history-item-hover-text: white;
+            --history-item-border: var(--border-color);
+        }
+
+        /* Light Mode Color Palette */
+        body.light-theme {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --border-color: #dee2e6;
+            --accent-primary: #007bff;
+            --accent-secondary: #0056b3;
+            --accent-hover: #004085;
+            --table-header-bg: #e9ecef;
+            --table-header-text: #495057;
+            --table-row-even-bg: #f2f2f2;
+            --table-row-hover-bg: #e2e6ea;
+            --error-bg: #f8d7da;
+            --error-border: #f5c6cb;
+            --error-text: #721c24;
+            --success-color: #28a745;
+            --fail-color: #dc3545;
+            --button-bg: var(--accent-primary);
+            --button-text: white;
+            --button-hover-bg: var(--accent-secondary);
+            --input-bg: #ffffff;
+            --input-text: var(--text-primary);
+            --history-item-bg: #e9ecef;
+            --history-item-text: var(--text-secondary);
+            --history-item-hover-bg: var(--accent-secondary);
+            --history-item-hover-text: white;
+            --history-item-border: #ced4da;
+        }
+
+        /* Global Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 10px 15px;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        h1 {
+            text-align: center;
+            color: var(--accent-primary);
+            margin-bottom: 25px;
+        }
+
+        /* Form Styles */
+        #search-form {
+            background-color: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+        #search-form div {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #search-form label {
+            font-weight: bold;
+            flex-basis: 80px;
+            text-align: right;
+            color: var(--text-secondary);
+        }
+        #search-form input[type="text"],
+        #search-form select {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: var(--input-bg);
+            color: var(--input-text);
+        }
+        #search-form select option { /* Style dropdown options if possible */
+             background-color: var(--input-bg);
+             color: var(--input-text);
+        }
+        #search-form button[type="submit"] {
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease;
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+        #search-form button[type="submit"]:hover {
+            background-color: var(--button-hover-bg);
+        }
+        #loading {
+            display: none;
+            margin-left: 10px;
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+
+        /* Search History Styles */
+        #search-history {
+            margin-top: -15px; /* Pull up slightly below the form */
+            margin-bottom: 20px;
+            padding: 0 20px; /* Align with form padding */
+        }
+        #search-history h4 {
+            margin-bottom: 5px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            font-weight: normal;
+        }
+        #search-history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .history-item {
+            background-color: var(--history-item-bg);
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 0.85em;
+            cursor: pointer;
+            border: 1px solid var(--history-item-border);
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+            color: var(--history-item-text);
+        }
+        .history-item:hover {
+            background-color: var(--history-item-hover-bg);
+            color: var(--history-item-hover-text);
+            border-color: var(--history-item-hover-bg);
+        }
+
+
+        /* Results Table Styles */
+        #search-results {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+            background-color: var(--bg-secondary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        #search-results th, #search-results td {
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            text-align: left;
+            /* white-space: nowrap; */ /* Removed global nowrap */
+            vertical-align: middle; /* Align cell content vertically */
+        }
+        /* Allow specific columns to wrap */
+        #search-results td:nth-child(3) { /* Name column */
+             white-space: normal;
+             word-break: break-word; /* Break long words if needed */
+             min-width: 200px; /* Give name column some minimum space */
+        }
+         #search-results td:nth-child(2) { /* Category column */
+             white-space: normal;
+         }
+
+        #search-results th {
+            background-color: var(--table-header-bg);
+            color: var(--table-header-text);
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+        #search-results tbody tr {
+            background-color: var(--bg-secondary); /* Default row background */
+        }
+        #search-results tbody tr:nth-child(even) {
+            background-color: var(--table-row-even-bg);
+        }
+        #search-results tbody tr:hover {
+            background-color: var(--table-row-hover-bg);
+        }
+        #search-results td:nth-child(2) {
+             white-space: normal;
+        }
+        #search-results td a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+        #search-results td a:hover {
+            text-decoration: underline;
+        }
+
+        /* Style for downloaded items */
+        .downloaded-glow {
+            color: var(--success-color);
+            /* Optional: Add a subtle glow */
+            text-shadow: 0 0 8px rgba(102, 187, 106, 0.7);
+        }
+        /* Blue glow on hover for name cell */
+        #search-results tbody td:nth-child(3):hover {
+             color: var(--accent-primary); /* Use accent blue */
+             text-shadow: 0 0 8px rgba(0, 180, 216, 0.7); /* Blue glow */
+        }
+        /* Blue glow on hover for torrent name cell */
+        .torrent-name-cell:hover {
+            color: var(--accent-primary); /* Optional: Change text color too */
+            text-shadow: 0 0 8px rgba(0, 123, 255, 0.7); /* Blue glow */
+            cursor: pointer; /* Reinforce clickable */
+        }
+
+        /* Specific Cell Colors */
+        .seeders-cell {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        .leechers-cell {
+            color: var(--fail-color);
+            font-weight: bold;
+        }
+
+        /* Size Cell Colors */
+        .size-small {
+            color: var(--text-secondary); /* Dimmer color for small files */
+        }
+        .size-medium {
+            color: var(--text-primary); /* Default text color */
+        }
+        .size-large {
+            color: #ffb74d; /* Orangeish */
+            font-weight: bold;
+        }
+        .size-xlarge {
+            color: #e57373; /* Reddish */
+            font-weight: bold;
+        }
+
+        /* Sort Indicator Styles */
+        #search-results th.sortable {
+            cursor: pointer;
+            position: relative;
+            padding-right: 30px;
+        }
+        #search-results th.sortable::after {
+            content: '\2195';
+            position: absolute;
+            right: 10px;
+            opacity: 0.3;
+            color: var(--text-secondary); /* Color for arrows */
+        }
+        #search-results th.sorted-asc::after {
+            content: '\2191';
+            opacity: 1;
+        }
+        #search-results th.sorted-desc::after {
+            content: '\2193';
+            opacity: 1;
+        }
+
+        /* Pagination Styles */
+        #pagination-controls {
+            margin-top: 25px;
+            text-align: center;
+            /* Add display flex for easier alignment if needed */
+             display: flex;
+             justify-content: center;
+             align-items: center;
+        }
+        .pagination-link {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 0 2px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            font-size: 0.9em;
+        }
+        .pagination-link:hover {
+            background-color: var(--accent-secondary);
+            border-color: var(--accent-secondary);
+            color: white;
+        }
+        .pagination-link.active {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: var(--bg-primary);
+            font-weight: bold;
+            cursor: default;
+        }
+        .pagination-link.disabled {
+            color: var(--text-secondary);
+            background-color: var(--border-color);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .pagination-ellipsis {
+            display: inline-block;
+            padding: 8px 5px;
+            margin: 0 2px;
+            color: var(--text-secondary);
+        }
+
+        /* Error Message Styles */
+        .error {
+            color: var(--error-text);
+            background-color: var(--error-bg);
+            border: 1px solid var(--error-border);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        /* Prevent body scroll when modal is open */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed; /* Stay in place */
+            z-index: 100; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+            display: flex; /* Use flexbox for centering */
+            align-items: center; /* Center vertically */
+            justify-content: center; /* Center horizontally */
+        }
+        .modal-content {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            margin: auto;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1200px;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .close-button {
+            color: var(--text-secondary);
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        #modal-body {
+            margin-top: 20px;
+            max-height: 60vh; /* Limit height and allow scroll */
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+        #modal-body pre {
+            background-color: var(--bg-primary);
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            white-space: pre-wrap; /* Allow wrapping */
+            word-wrap: break-word;
+        }
+        #modal-body h3 {
+            margin-top: 20px;
+            color: var(--accent-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+        /* Ensure images in description don't overflow */
+        #modal-body .description-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            background-color: var(--text-secondary); /* Add bg color while loading */
+        }
+        /* Style specific elements within the description */
+        #modal-body .description-content h2 {
+            font-size: 1.2em;
+            margin: 1em 0 0.5em 0;
+            color: var(--text-primary);
+        }
+        #modal-body .description-content h3 {
+            /* Already styled, but ensure consistency */
+            margin-top: 1.5em;
+            color: var(--accent-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            font-size: 1.1em;
+        }
+         #modal-body .description-content h4 {
+            font-size: 1em;
+            margin: 0.8em 0 0.4em 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        #modal-body .description-content p {
+            margin-bottom: 1em;
+            line-height: 1.6;
+        }
+        #modal-body .description-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 1.5em 0;
+        }
+        #modal-body .description-content a {
+            color: var(--accent-primary);
+             /* text-decoration: underline; */ /* Keep default link style */
+        }
+        #modal-body .description-content a:hover {
+             color: var(--accent-secondary);
+             text-decoration: underline;
+        }
+
+        /* File List Styles */
+        .file-list-container ul {
+            list-style: none;
+            padding-left: 0; /* Let li handle indentation */
+            margin-top: 10px;
+        }
+        .file-list-container li {
+            margin-bottom: 8px; /* More spacing */
+            cursor: default;
+            display: block; /* Ensure each item is on its own line */
+            padding-left: 20px; /* Add indentation here */
+            line-height: 1.4; /* Improve readability */
+        }
+        .file-list-container li.folder > .folder-toggle {
+            cursor: pointer;
+        }
+        /* Add glow effect for non-empty folders */
+        .file-list-container li.non-empty-folder > .folder-toggle {
+            /* text-shadow: 0 0 5px var(--accent-primary); */ /* Example glow */
+            /* Let's make the text color brighter instead for better readability */
+             color: var(--accent-primary);
+             font-weight: 500; /* Slightly bolder */
+         }
+        .file-list-container i.icon::before {
+            display: inline-block;
+            width: 1.2em;
+            margin-right: 5px;
+            vertical-align: -0.1em; /* Adjust vertical alignment */
+            color: var(--text-primary); /* Default icon color */
+        }
+         /* Simple SVG icons */
+         .file-list-container i.icon-folder-closed::before {
+             content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='1em' viewBox='0 0 512 512' fill='%2300b4d8'%3E%3Cpath d='M64 480H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H288c-10.1 0-19.6-4.7-25.6-12.8L243.2 57.6C231.1 41.5 212.1 32 192 32H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64z'/%3E%3C/svg%3E");
+         }
+         .file-list-container li.expanded i.icon-folder-closed::before {
+            /* Hide closed icon when expanded */
+            content: none;
+         }
+         .file-list-container i.icon-folder-open::before {
+             /* Define open folder icon, hidden by default */
+             content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='1em' viewBox='0 0 576 512' fill='%2300b4d8'%3E%3Cpath d='M88.7 223.8L0 375.8V96C0 60.7 28.7 32 64 32H192c17.7 0 32 14.3 32 32s-14.3 32-32 32H64V215.3c7.5-2.6 15.5-3.9 23.8-3.9H208c13.3 0 24 10.7 24 24s-10.7 24-24 24H88.7zM576 375.8L487.3 223.8H488c13.3 0 24-10.7 24-24s-10.7-24-24-24H368.2c-8.3 0-16.3 1.3-23.8 3.9V96H448c17.7 0 32 14.3 32 32s-14.3 32-32 32H320c-17.7 0-32-14.3-32-32s14.3-32 32-32H448V215.3c7.5-2.6 15.5-3.9 23.8-3.9H512c35.3 0 64 28.7 64 64v24.8zM384.8 271.8l52.3 89.1H64.9l52.3-89.1C120.7 267.1 128 261.6 128 254.8c0-13.3 10.7-24 24-24H360c13.3 0 24 10.7 24 24c0 6.8 7.3 12.3 10.8 17zM528 416H48c-26.5 0-48 21.5-48 48s21.5 48 48 48h480c26.5 0 48-21.5 48-48s-21.5-48-48-48z'/%3E%3C/svg%3E");
+             display: none;
+         }
+         .file-list-container li.expanded i.icon-folder-open::before {
+            /* Show open icon when expanded */
+            display: inline-block;
+         }
+         .file-list-container i.icon-file::before {
+             content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='1em' viewBox='0 0 384 512' fill='%23e0e0e0'%3E%3Cpath d='M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V448c0 35.3-28.7 64-64 64H64C28.7 512 0 483.3 0 448V64z'/%3E%3C/svg%3E");
+             color: var(--text-secondary); /* File icon dimmer */
+         }
+         .file-list-container .file-size-inline {
+             color: var(--text-secondary);
+             margin-left: 10px;
+             font-size: 0.9em;
+         }
+         .file-list-container ul ul {
+             /* Style nested lists: Hide by default */
+             display: none;
+             /* padding-left: 25px; Ensure padding is applied correctly */
+         }
+         .file-list-container li.folder.expanded > ul {
+             /* Show direct child ul when folder is expanded */
+             display: block;
+         }
+
+        /* Custom Scrollbar Styles */
+        /* Works in Webkit browsers (Chrome, Edge, Safari, Electron) */
+        ::-webkit-scrollbar {
+            width: 10px; /* Width of the vertical scrollbar */
+            height: 10px; /* Height of the horizontal scrollbar */
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary); /* Track color */
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: var(--border-color); /* Thumb color */
+            border-radius: 5px;
+            border: 2px solid var(--bg-primary); /* Creates padding around thumb */
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: var(--text-secondary); /* Thumb color on hover */
+        }
+
+        /* Download Item Styles */
+        .download-item {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+        }
+        .download-item .filename {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 60%; /* Limit filename width */
+        }
+        .download-item .status {
+            font-style: italic;
+            color: var(--text-secondary);
+            min-width: 80px; /* Ensure status text doesn't jump around */
+            text-align: right;
+        }
+        .download-item .status.completed {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        .download-item .status.failed {
+            color: var(--fail-color);
+            font-weight: bold;
+        }
+        .download-item progress {
+            width: 150px; /* Fixed width for progress bar */
+            height: 10px;
+            appearance: none; /* Needed for custom styling */
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            overflow: hidden; /* Ensure inner bar respects border radius */
+            background-color: var(--bg-secondary); /* Background of the progress track */
+        }
+        /* Style the progress bar value */
+        .download-item progress::-webkit-progress-value {
+            background-color: var(--accent-primary);
+            border-radius: 4px;
+            transition: width 0.1s linear;
+        }
+        /* Specific styles for different states */
+         .download-item.completed progress::-webkit-progress-value {
+             background-color: var(--success-color); /* Green for completed */
+         }
+         .download-item.failed progress,
+         .download-item.cancelled progress {
+             display: none; /* Hide progress bar for failed/cancelled */
+         }
+         .download-item button.cancel-download {
+             background: none;
+             border: none;
+             color: var(--fail-color);
+             font-size: 1.2em;
+             cursor: pointer;
+             padding: 0 5px;
+             line-height: 1;
+         }
+         .download-item button.cancel-download:hover {
+             color: red;
+         }
+
+        /* Style specific elements within the description */
+        #detail-modal #modal-body .description-content h2 {
+            font-size: 1.2em;
+            margin: 1em 0 0.5em 0;
+            color: var(--text-primary);
+        }
+        #detail-modal #modal-body .description-content h3 {
+            /* Already styled, but ensure consistency */
+            margin-top: 1.5em;
+            color: var(--accent-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            font-size: 1.1em;
+        }
+         #detail-modal #modal-body .description-content h4 {
+            font-size: 1em;
+            margin: 0.8em 0 0.4em 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        #detail-modal #modal-body .description-content p {
+            margin-bottom: 1em;
+            line-height: 1.6;
+        }
+        #detail-modal #modal-body .description-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 1.5em 0;
+        }
+        #detail-modal #modal-body .description-content a {
+            color: var(--accent-primary);
+             /* text-decoration: underline; */
+        }
+        #detail-modal #modal-body .description-content a:hover {
+             color: var(--accent-secondary);
+             text-decoration: underline;
+        }
+
+        /* Styling for general buttons (like clear history/downloads) */
+        .control-button {
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            padding: 8px 15px; /* Slightly smaller padding than submit */
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em; /* Slightly smaller font size */
+            transition: background-color 0.2s ease;
+            margin-right: 5px; /* Add some spacing between buttons */
+        }
+        .control-button:hover {
+            background-color: var(--button-hover-bg);
+        }
+        .control-button:last-child {
+            margin-right: 0; /* Remove margin from the last button in a group */
+        }
+
+        /* Spinner */
+        .spinner {
+            color: var(--text-primary);
+        }
+
+        /* Settings Modal */
+        #settings-modal {
+            display: none; /* Hidden by default */
+            position: fixed; 
+            z-index: 1001; /* Above the detail modal */
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Dark overlay */
+        }
+        .settings-modal-content {
+            background-color: var(--bg-secondary);
+            margin: 10% auto; /* Centered */
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            color: var(--text-primary);
+        }
+        .settings-modal-content h2 {
+            margin-top: 0;
+            color: var(--accent-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .settings-modal-content .setting-item {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .settings-modal-content label {
+            color: var(--text-secondary);
+        }
+        .settings-modal-content input[type="number"],
+        .settings-modal-content input[type="text"],
+        .settings-modal-content select {
+             padding: 8px;
+             border: 1px solid var(--border-color);
+             border-radius: 4px;
+             background-color: var(--input-bg);
+             color: var(--input-text);
+             min-width: 80px;
+        }
+        .settings-modal-content .modal-buttons {
+            text-align: right;
+            margin-top: 30px;
+        }
+
+        /* Light Theme */
+        body.light-theme #search-form input[type="text"],
+        body.light-theme #search-form select,
+        body.light-theme .settings-modal-content input[type="number"],
+        body.light-theme .settings-modal-content select {
+             background-color: #ffffff;
+             color: #333333;
+        }
+        body.light-theme #search-form select option {
+            background-color: #ffffff;
+            color: #333333;
+        }
+        body.light-theme .control-button {
+            background-color: var(--button-bg);
+            color: var(--button-text);
+        }
+        body.light-theme .control-button:hover {
+            background-color: var(--button-hover-bg);
+        }
+        body.light-theme .history-item {
+             background-color: var(--history-item-bg);
+             border: 1px solid var(--history-item-border);
+             color: var(--history-item-text);
+        }
+        body.light-theme .history-item:hover {
+             background-color: var(--history-item-hover-bg);
+             color: var(--history-item-hover-text);
+             border-color: var(--history-item-hover-bg);
+        }
+        body.light-theme #download-list .download-item {
+             background-color: var(--bg-secondary);
+             border: 1px solid var(--border-color);
+             color: var(--text-primary);
+        }
+        body.light-theme #detail-modal .modal-content {
+             background-color: var(--bg-secondary);
+             color: var(--text-primary);
+             border: 1px solid var(--border-color);
+        }
+        body.light-theme #detail-modal .modal-content .close-button {
+            color: var(--text-secondary);
+        }
+        body.light-theme #detail-modal .modal-content .close-button:hover {
+            color: var(--text-primary);
+        }
+        body.light-theme #detail-modal .description-content a {
+            color: var(--accent-primary);
+        }
+        body.light-theme #detail-modal .description-content a:hover {
+            color: var(--accent-secondary);
+        }
+        body.light-theme .settings-modal-content {
+             background-color: var(--bg-secondary);
+             color: var(--text-primary);
+             border: 1px solid var(--border-color);
+        }
+        body.light-theme .settings-modal-content h2 {
+             color: var(--accent-primary);
+             border-bottom: 1px solid var(--border-color);
+        }
+        body.light-theme .settings-modal-content label {
+             color: var(--text-secondary);
+        }
+
+        /* Add Theme Toggle Button */
+        #theme-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+            color: var(--button-text);
+        }
+        #theme-toggle:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Nyaa.si Desktop Search</h1>
+
+    <div style="text-align: right; margin-bottom: 20px; padding: 0 20px;">
+        <button id="open-settings-button" class="control-button">⚙️ Settings</button>
+    </div>
+
+    <form id="search-form">
+        <div>
+            <label for="search-term" title="Enter keywords to search for">Search:</label>
+            <input type="text" id="search-term" placeholder="Enter search term" list="search-history-datalist">
+            <datalist id="search-history-datalist">
+                <!-- History options will be added here by JS -->
+            </datalist>
+        </div>
+        <div>
+            <label for="search-category" title="Filter results by category">Category:</label>
+            <select id="search-category" title="Filter results by category">
+                <option value="1_0">All Categories</option>
+                <option value="1_2">Anime - English Translated</option>
+                <option value="1_3">Anime - Non-English Translated</option>
+                <option value="1_4">Anime - Raw</option>
+                <option value="3_1">Literature - English Translated</option>
+                <option value="4_1">Live Action - English Translated</option>
+                <option value="6_1">Software - Applications</option>
+                <option value="6_2">Software - Games</option>
+                <!-- Add more categories as needed -->
+            </select>
+
+            <label for="search-filter" title="Filter results (e.g., hide remakes)">Filter:</label>
+            <select id="search-filter" title="Filter results (e.g., hide remakes)">
+                <option value="0">No Filter</option>
+                <option value="1">No Remakes</option>
+                <option value="2">Trusted Only</option>
+            </select>
+        </div>
+        <div>
+            <label for="search-sort" title="Choose sorting criteria">Sort By:</label>
+            <select id="search-sort" title="Choose sorting criteria">
+                <option value="date">Date</option>
+                <option value="id">ID</option>
+                <option value="seeders">Seeders</option>
+                <option value="leechers">Leechers</option>
+                <option value="downloads">Downloads</option>
+                <option value="size">Size</option>
+                <option value="comments">Comments</option>
+            </select>
+
+            <label for="search-direction" title="Sort direction (Ascending/Descending)">Direction:</label>
+            <select id="search-direction" title="Sort direction (Ascending/Descending)">
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+            </select>
+        </div>
+
+        <button type="submit">Search</button>
+        <span id="loading">Loading...</span>
+    </form>
+
+    <!-- Search History Display -->
+    <div id="search-history">
+        <h4>Recent Searches:</h4>
+        <div id="search-history-list">
+            <!-- Recent searches will be added here by JS -->
+        </div>
+        <button id="clear-search-history" class="control-button">Clear Search History</button>
+    </div>
+
+    <div id="error-message" class="error" style="display: none;"></div> <!-- Hide error initially -->
+
+    <table id="search-results">
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th class="sortable" data-sort="name">Name</th>
+                <th class="sortable" data-sort="size">Size</th>
+                <th class="sortable" data-sort="id">Date</th>
+                <th class="sortable" data-sort="seeders">Seeders</th>
+                <th class="sortable" data-sort="leechers">Leechers</th>
+                <th class="sortable" data-sort="downloads">Downloads</th>
+                <th class="sortable" data-sort="comments">Comments</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Results will be inserted here -->
+        </tbody>
+    </table>
+
+    <!-- Download Manager Section -->
+    <div id="download-manager" style="margin-top: 25px; background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; display: none;">
+        <h3 style="margin-top: 0; color: var(--accent-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">Downloads</h3>
+        <div id="download-list" style="max-height: 200px; overflow-y: auto; padding-right: 5px;">
+            <!-- Download items will be added here by JS -->
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+             <button id="clear-downloaded-markers" class="control-button">Clear Downloaded Markers</button>
+             <button id="clear-completed-downloads" class="control-button">Clear Finished List Items</button>
+        </div>
+    </div>
+
+    <div id="pagination-controls" style="margin-top: 15px; text-align: center; display: none;">
+        <!-- Pagination links/buttons will be generated here by JavaScript -->
+    </div>
+
+    <!-- Torrent Detail Modal -->
+    <div id="detail-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button" title="Close">&times;</span>
+            <h2>Torrent Details</h2>
+            <div id="modal-body">
+                <!-- Details will be loaded here -->
+                Loading details...
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal Structure -->
+    <div id="settings-modal">
+        <div class="settings-modal-content">
+            <span class="close-button" id="settings-close-button">&times;</span>
+            <h2>Settings</h2>
+
+            <div class="setting-item">
+                <label for="theme-select">Theme:</label>
+                <select id="theme-select">
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                </select>
+            </div>
+
+            <div class="setting-item">
+                <label for="history-limit-input">Search History Limit:</label>
+                <input type="number" id="history-limit-input" min="0" max="50" value="10">
+            </div>
+
+            <div class="setting-item">
+                <label for="download-path-input">Download Location:</label>
+                <div style="display: flex; flex-grow: 1; align-items: center; gap: 5px;">
+                    <input type="text" id="download-path-input" readonly title="Selected download folder">
+                    <button id="browse-download-path" class="control-button" style="padding: 5px 10px; font-size: 0.8em;">Browse</button>
+                </div>
+            </div>
+
+            <!-- Add more settings here later (e.g., Download Location) -->
+
+            <div class="modal-buttons">
+                 <button id="settings-save-button" class="control-button">Save</button>
+                 <button id="settings-cancel-button" class="control-button">Cancel</button> 
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the renderer script -->
+    <script src="./renderer.js"></script>
+</body>
+</html>
