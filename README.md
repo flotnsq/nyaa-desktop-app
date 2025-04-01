@@ -1,6 +1,6 @@
 # nyaa-desktop-app
 
-A basic desktop application related to nyaa.
+A basic desktop application related to [nyaa.](https://nyaa.si/).
 
 ## Features
 
