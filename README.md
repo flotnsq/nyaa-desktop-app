@@ -31,7 +31,7 @@ A basic desktop application related to [nyaa.](https://nyaa.si/).
 ## Screenshots
 
 **Main Search Interface:**
-![Main Search](assets/main-search.png)
+
 
 **Torrent Details View:**
 ![Torrent Details](assets/torrent-details.png) 
